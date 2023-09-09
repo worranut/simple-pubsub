@@ -233,8 +233,6 @@ const pubSubService: IPublishSubscribeService = new PublishSubscribeService();
   const refillSubscriber = new MachineRefillSubscriber(machines);
   const stockWarningSubscriber = new StockWarningSubscriber();
 
-  // create the PubSub service
-
   // subscribe subscribers to events
   pubSubService.subscribe("sale", saleSubscriber);
   pubSubService.subscribe("refill", refillSubscriber);
