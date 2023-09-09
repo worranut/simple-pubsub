@@ -3,6 +3,9 @@ import IEvent from "./intefaces/event.interface";
 import IPublishSubscribeService from "./intefaces/publishSubscribeService.interface";
 import ISubscriber from "./intefaces/subscriber.interface";
 import Machine from "./objects/machine.obj";
+import MachineRefillSubscriber from "./subscribers/machineRefill.sub";
+import MachineSaleSubscriber from "./subscribers/machineSale.sub";
+import StockWarningSubscriber from "./subscribers/stockWarning.sub";
 
 // implementations
 export class MachineSaleEvent implements IEvent {
@@ -43,7 +46,7 @@ export class MachineRefillEvent implements IEvent {
   }
 }
 
-class MachineLowStockWarningEvent implements IEvent {
+export class MachineLowStockWarningEvent implements IEvent {
   constructor(private readonly _machineId: string) {}
 
   machineId(): string {
@@ -55,7 +58,7 @@ class MachineLowStockWarningEvent implements IEvent {
   }
 }
 
-class MachineStockLevelOkEvent implements IEvent {
+export class MachineStockLevelOkEvent implements IEvent {
   constructor(private readonly _machineId: string) {}
 
   machineId(): string {
@@ -65,68 +68,6 @@ class MachineStockLevelOkEvent implements IEvent {
   type(): string {
     return "stockLevelOk";
   }
-}
-
-class MachineSaleSubscriber implements ISubscriber {
-  public machines: Machine[];
-
-  constructor(machines: Machine[]) {
-    this.machines = machines;
-  }
-
-  handle(event: MachineSaleEvent): void {
-    const machine = this.machines.find((m) => m.id === event.machineId());
-    if (machine) {
-      machine.stockLevel -= event.getSoldQuantity();
-      if (machine.stockLevel < 3) {
-        // Generate a LowStockWarningEvent
-        pubSubService.publish(new MachineLowStockWarningEvent(machine.id));
-      }
-    }
-  }
-}
-
-class MachineRefillSubscriber implements ISubscriber {
-  public machines: Machine[];
-
-  constructor(machines: Machine[]) {
-    this.machines = machines;
-  }
-
-  handle(event: MachineRefillEvent): void {
-    const machine = this.machines.find((m) => m.id === event.machineId());
-    if (machine) {
-      machine.stockLevel += event.getRefillQuantity();
-      if (machine.stockLevel >= 3) {
-        // Generate a StockLevelOkEvent
-        pubSubService.publish(new MachineStockLevelOkEvent(machine.id));
-      }
-    }
-  }
-}
-
-class StockWarningSubscriber implements ISubscriber {
-  private machinesWithLowStock: Set<string> = new Set();
-
-  handle = (event: IEvent): void => {
-    if (event instanceof MachineLowStockWarningEvent) {
-      const warningEvent = event as MachineLowStockWarningEvent;
-      if (!this.machinesWithLowStock.has(warningEvent.machineId())) {
-        console.log(
-          `**WARNING** Low stock warning for machine: ${warningEvent.machineId()}`
-        );
-        this.machinesWithLowStock.add(warningEvent.machineId());
-      }
-    } else if (event instanceof MachineStockLevelOkEvent) {
-      const stockOkEvent = event as MachineStockLevelOkEvent;
-      if (this.machinesWithLowStock.has(stockOkEvent.machineId())) {
-        console.log(
-          `**OK** Stock level is OK for machine: ${stockOkEvent.machineId()}`
-        );
-        this.machinesWithLowStock.delete(stockOkEvent.machineId());
-      }
-    }
-  };
 }
 
 // Publish-Subscribe Service Implementation
@@ -177,8 +118,6 @@ class PublishSubscribeService implements IPublishSubscribeService {
 }
 
 // program
-const pubSubService: IPublishSubscribeService = new PublishSubscribeService();
-
 (async () => {
   // create 3 machines with a quantity of 10 stock
   const machines: Machine[] = [
@@ -187,9 +126,11 @@ const pubSubService: IPublishSubscribeService = new PublishSubscribeService();
     new Machine("003"),
   ];
 
+  const pubSubService: IPublishSubscribeService = new PublishSubscribeService();
+
   // create a machine sale event subscriber. inject the machines (all subscribers should do this)
-  const saleSubscriber = new MachineSaleSubscriber(machines);
-  const refillSubscriber = new MachineRefillSubscriber(machines);
+  const saleSubscriber = new MachineSaleSubscriber(machines, pubSubService);
+  const refillSubscriber = new MachineRefillSubscriber(machines, pubSubService);
   const stockWarningSubscriber = new StockWarningSubscriber();
 
   // subscribe subscribers to events
