@@ -53,6 +53,30 @@ class MachineRefillEvent implements IEvent {
   }
 }
 
+class MachineLowStockWarningEvent implements IEvent {
+  constructor(private readonly _machineId: string) {}
+
+  machineId(): string {
+    return this._machineId;
+  }
+
+  type(): string {
+    return "lowStockWarning";
+  }
+}
+
+class MachineStockLevelOkEvent implements IEvent {
+  constructor(private readonly _machineId: string) {}
+
+  machineId(): string {
+    return this._machineId;
+  }
+
+  type(): string {
+    return "stockLevelOk";
+  }
+}
+
 class MachineSaleSubscriber implements ISubscriber {
   public machines: Machine[];
 
@@ -64,6 +88,10 @@ class MachineSaleSubscriber implements ISubscriber {
     const machine = this.machines.find((m) => m.id === event.machineId());
     if (machine) {
       machine.stockLevel -= event.getSoldQuantity();
+      if (machine.stockLevel < 3) {
+        // Generate a LowStockWarningEvent
+        pubSubService.publish(new MachineLowStockWarningEvent(machine.id));
+      }
     }
   }
 }
@@ -79,8 +107,36 @@ class MachineRefillSubscriber implements ISubscriber {
     const machine = this.machines.find((m) => m.id === event.machineId());
     if (machine) {
       machine.stockLevel += event.getRefillQuantity();
+      if (machine.stockLevel >= 3) {
+        // Generate a StockLevelOkEvent
+        pubSubService.publish(new MachineStockLevelOkEvent(machine.id));
+      }
     }
   }
+}
+
+class StockWarningSubscriber implements ISubscriber {
+  private machinesWithLowStock: Set<string> = new Set();
+
+  handle = (event: IEvent): void => {
+    if (event instanceof MachineLowStockWarningEvent) {
+      const warningEvent = event as MachineLowStockWarningEvent;
+      if (!this.machinesWithLowStock.has(warningEvent.machineId())) {
+        console.log(
+          `**WARNING** Low stock warning for machine: ${warningEvent.machineId()}`
+        );
+        this.machinesWithLowStock.add(warningEvent.machineId());
+      }
+    } else if (event instanceof MachineStockLevelOkEvent) {
+      const stockOkEvent = event as MachineStockLevelOkEvent;
+      if (this.machinesWithLowStock.has(stockOkEvent.machineId())) {
+        console.log(
+          `**OK** Stock level is OK for machine: ${stockOkEvent.machineId()}`
+        );
+        this.machinesWithLowStock.delete(stockOkEvent.machineId());
+      }
+    }
+  };
 }
 
 // Publish-Subscribe Service Implementation
@@ -96,13 +152,27 @@ class PublishSubscribeService implements IPublishSubscribeService {
 
   publish = (event: IEvent): void => {
     const type = event.type();
-    console.log(event);
+
+    // Print event log when sale or refill event
+    if (
+      event instanceof MachineSaleEvent ||
+      event instanceof MachineRefillEvent
+    ) {
+      console.log(event);
+    }
 
     if (this.subscribers[type]) {
       this.subscribers[type].forEach((subscriber) => {
         subscriber.handle(event);
-        console.log(subscriber);
-        console.log("======================");
+
+        // Print all machines log when sale or refill subscriber
+        if (
+          subscriber instanceof MachineSaleSubscriber ||
+          subscriber instanceof MachineRefillSubscriber
+        ) {
+          console.log(subscriber.machines);
+          console.log("========================================");
+        }
       });
     }
   };
@@ -161,12 +231,15 @@ const pubSubService: IPublishSubscribeService = new PublishSubscribeService();
   // create a machine sale event subscriber. inject the machines (all subscribers should do this)
   const saleSubscriber = new MachineSaleSubscriber(machines);
   const refillSubscriber = new MachineRefillSubscriber(machines);
+  const stockWarningSubscriber = new StockWarningSubscriber();
 
   // create the PubSub service
 
   // subscribe subscribers to events
   pubSubService.subscribe("sale", saleSubscriber);
   pubSubService.subscribe("refill", refillSubscriber);
+  pubSubService.subscribe("lowStockWarning", stockWarningSubscriber);
+  pubSubService.subscribe("stockLevelOk", stockWarningSubscriber);
 
   // create 5 random events
   const events = [1, 2, 3, 4, 5].map((i) => eventGenerator());
@@ -177,4 +250,6 @@ const pubSubService: IPublishSubscribeService = new PublishSubscribeService();
   // unsubscribe subscribers at the end
   pubSubService.unsubscribe("sale", saleSubscriber);
   pubSubService.unsubscribe("refill", refillSubscriber);
+  pubSubService.unsubscribe("lowStockWarning", stockWarningSubscriber);
+  pubSubService.unsubscribe("stockLevelOk", stockWarningSubscriber);
 })();
