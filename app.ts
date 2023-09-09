@@ -2,6 +2,7 @@ import { eventGenerator } from "./helper";
 import IEvent from "./intefaces/event.interface";
 import IPublishSubscribeService from "./intefaces/publishSubscribeService.interface";
 import ISubscriber from "./intefaces/subscriber.interface";
+import Machine from "./objects/machine.obj";
 
 // implementations
 export class MachineSaleEvent implements IEvent {
@@ -173,16 +174,6 @@ class PublishSubscribeService implements IPublishSubscribeService {
       );
     }
   };
-}
-
-// objects
-class Machine {
-  public stockLevel = 10;
-  public id: string;
-
-  constructor(id: string) {
-    this.id = id;
-  }
 }
 
 // program
