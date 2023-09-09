@@ -11,7 +11,7 @@ interface ISubscriber {
 interface IPublishSubscribeService {
   publish(event: IEvent): void;
   subscribe(type: string, handler: ISubscriber): void;
-  // unsubscribe ( /* Question 2 - build this feature */ );
+  unsubscribe(type: string, handler: ISubscriber): void;
 }
 
 // implementations
@@ -106,6 +106,14 @@ class PublishSubscribeService implements IPublishSubscribeService {
       });
     }
   };
+
+  unsubscribe = (type: string, handler: ISubscriber): void => {
+    if (this.subscribers[type]) {
+      this.subscribers[type] = this.subscribers[type].filter(
+        (subscriber) => subscriber !== handler
+      );
+    }
+  };
 }
 
 // objects
@@ -165,4 +173,8 @@ const pubSubService: IPublishSubscribeService = new PublishSubscribeService();
 
   // publish the events
   events.map(pubSubService.publish);
+
+  // unsubscribe subscribers at the end
+  pubSubService.unsubscribe("sale", saleSubscriber);
+  pubSubService.unsubscribe("refill", refillSubscriber);
 })();
