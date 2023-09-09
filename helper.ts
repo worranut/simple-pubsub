@@ -1,4 +1,5 @@
-import { MachineRefillEvent, MachineSaleEvent } from "./app";
+import MachineRefillEvent from "./events/machineRefill.event";
+import MachineSaleEvent from "./events/machineSale.event";
 import IEvent from "./intefaces/event.interface";
 
 const randomMachine = (): string => {

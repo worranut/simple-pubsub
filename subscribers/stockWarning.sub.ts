@@ -1,4 +1,5 @@
-import { MachineLowStockWarningEvent, MachineStockLevelOkEvent } from "../app";
+import MachineLowStockWarningEvent from "../events/machineLowStockWarning.event";
+import MachineStockLevelOkEvent from "../events/machineStockLevelOk.event";
 import IEvent from "../intefaces/event.interface";
 import ISubscriber from "../intefaces/subscriber.interface";
 

@@ -1,3 +1,5 @@
+import MachineRefillEvent from "./events/machineRefill.event";
+import MachineSaleEvent from "./events/machineSale.event";
 import { eventGenerator } from "./helper";
 import IEvent from "./intefaces/event.interface";
 import IPublishSubscribeService from "./intefaces/publishSubscribeService.interface";
@@ -6,69 +8,6 @@ import Machine from "./objects/machine.obj";
 import MachineRefillSubscriber from "./subscribers/machineRefill.sub";
 import MachineSaleSubscriber from "./subscribers/machineSale.sub";
 import StockWarningSubscriber from "./subscribers/stockWarning.sub";
-
-// implementations
-export class MachineSaleEvent implements IEvent {
-  constructor(
-    private readonly _sold: number,
-    private readonly _machineId: string
-  ) {}
-
-  machineId(): string {
-    return this._machineId;
-  }
-
-  getSoldQuantity(): number {
-    return this._sold;
-  }
-
-  type(): string {
-    return "sale";
-  }
-}
-
-export class MachineRefillEvent implements IEvent {
-  constructor(
-    private readonly _refill: number,
-    private readonly _machineId: string
-  ) {}
-
-  machineId(): string {
-    return this._machineId;
-  }
-
-  getRefillQuantity(): number {
-    return this._refill;
-  }
-
-  type(): string {
-    return "refill";
-  }
-}
-
-export class MachineLowStockWarningEvent implements IEvent {
-  constructor(private readonly _machineId: string) {}
-
-  machineId(): string {
-    return this._machineId;
-  }
-
-  type(): string {
-    return "lowStockWarning";
-  }
-}
-
-export class MachineStockLevelOkEvent implements IEvent {
-  constructor(private readonly _machineId: string) {}
-
-  machineId(): string {
-    return this._machineId;
-  }
-
-  type(): string {
-    return "stockLevelOk";
-  }
-}
 
 // Publish-Subscribe Service Implementation
 class PublishSubscribeService implements IPublishSubscribeService {

@@ -1,4 +1,5 @@
-import { MachineRefillEvent, MachineStockLevelOkEvent } from "../app";
+import MachineRefillEvent from "../events/machineRefill.event";
+import MachineStockLevelOkEvent from "../events/machineStockLevelOk.event";
 import IPublishSubscribeService from "../intefaces/publishSubscribeService.interface";
 import ISubscriber from "../intefaces/subscriber.interface";
 import Machine from "../objects/machine.obj";

@@ -1,4 +1,5 @@
-import { MachineLowStockWarningEvent, MachineSaleEvent } from "../app";
+import MachineLowStockWarningEvent from "../events/machineLowStockWarning.event";
+import MachineSaleEvent from "../events/machineSale.event";
 import IPublishSubscribeService from "../intefaces/publishSubscribeService.interface";
 import ISubscriber from "../intefaces/subscriber.interface";
 import Machine from "../objects/machine.obj";
